@@ -1,35 +1,38 @@
 {
-  "name": "psyduck-pet",
+  "name": "desktop-pet",
   "version": "1.0.0",
-  "description": "可达鸭桌面宠物",
+  "description": "宝可梦桌面宠物 - 多角色切换",
   "main": "main.js",
-  "author": "duck",
+  "author": "desktop-pet",
   "scripts": {
     "start": "electron .",
     "dist:win": "electron-builder --win",
     "dist:mac": "electron-builder --mac"
   },
   "build": {
-    "appId": "com.duck.pet",
-    "productName": "可达鸭",
+    "appId": "com.desktop.pet",
+    "productName": "desktop-pet",
     "files": [
       "main.js",
       "preload.js",
+      "context.js",
       "duck_offline.html",
-      "duck.ico",
-      "duck.png"
+      "pets.json",
+      "pokeball.png",
+      "pokeball.ico",
+      "assets/pets/**/*"
     ],
     "win": {
       "target": [
         { "target": "nsis", "arch": ["x64"] }
       ],
-      "icon": "duck.ico"
+      "icon": "pokeball.ico"
     },
     "mac": {
       "target": [
         { "target": "dmg", "arch": ["x64", "arm64"] }
       ],
-      "icon": "duck.png",
+      "icon": "pokeball.png",
       "category": "public.app-category.entertainment"
     },
     "nsis": {

@@ -1,27 +1,140 @@
 const { app, BrowserWindow, screen, Tray, Menu, nativeImage, ipcMain } = require('electron');
 const path = require('path');
+const fs = require('fs');
+const https = require('https');
+const { buildContext, parseWeather } = require('./context');
 
 let win, tray;
+let petsData = { current: 'psyduck', pets: {} };
+
+// 读取角色数据
+function loadPets() {
+  try {
+    const raw = fs.readFileSync(path.join(__dirname, 'pets.json'), 'utf-8');
+    petsData = JSON.parse(raw);
+  } catch (e) {
+    console.error('读取pets.json失败:', e);
+  }
+}
+
+// 当前角色的图片转base64(注入页面)
+function imgToBase64(filePath) {
+  try {
+    const buf = fs.readFileSync(path.join(__dirname, filePath));
+    const ext = path.extname(filePath).slice(1);
+    return `data:image/${ext};base64,${buf.toString('base64')}`;
+  } catch (e) { return ''; }
+}
+
+// 切换角色:注入图片+台词+移动风格到页面
+function switchPet(name) {
+  const pet = petsData.pets[name];
+  if (!pet) return;
+  petsData.current = name;
+  const imgB64 = imgToBase64(pet.img);
+  const linesJson = JSON.stringify(pet.lines).replace(/'/g, "\\'");
+  const moveStyle = pet.moveStyle || 'walk';
+  if (win && !win.isDestroyed()) {
+    win.webContents.executeJavaScript(`
+      if (window.__switchPet) {
+        window.__switchPet(${JSON.stringify(name)}, ${JSON.stringify(pet.name)}, ${JSON.stringify(imgB64)}, ${JSON.stringify(pet.emoji)}, '${linesJson}', ${JSON.stringify(moveStyle)});
+      }
+    `).catch(() => {});
+  }
+  updateTray();
+}
+
+// 情境台词每周更新:缓存到本地,本周内复用,无网络用旧缓存
+const CONTEXT_CACHE = path.join(app.getPath('userData'), 'context-cache.json');
+
+function getWeekKey() {
+  // 返回 "YYYY-WW"(ISO周数),用于判断是否本周
+  const d = new Date();
+  const thurs = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate() + 3 - ((d.getDay() + 6) % 7)));
+  const year = thurs.getFullYear();
+  const week = 1 + Math.round(((thurs - new Date(Date.UTC(year, 0, 4))) / 86400000 - 3 + ((new Date(Date.UTC(year, 0, 4)).getDay() + 6) % 7)) / 7);
+  return `${year}-W${String(week).padStart(2, '0')}`;
+}
+
+function applyContext(pool) {
+  if (win && !win.isDestroyed()) {
+    win.webContents.executeJavaScript(
+      `window.__contextLines = ${JSON.stringify(pool)};`
+    ).catch(() => {});
+  }
+}
+
+function loadContext() {
+  // 1. 读缓存,如果是本周 → 直接用(不请求网络)
+  let cached = null;
+  try {
+    cached = JSON.parse(fs.readFileSync(CONTEXT_CACHE, 'utf-8'));
+  } catch {}
+  const thisWeek = getWeekKey();
+  if (cached && cached.week === thisWeek && Array.isArray(cached.pool) && cached.pool.length) {
+    applyContext(cached.pool);
+    return; // 本周已更新过,不重复请求
+  }
+  // 2. 本周未更新 → 请求网络更新(天气+日期)
+  fetchWeatherAndUpdate(cached);
+}
+
+function fetchWeatherAndUpdate(fallbackCache) {
+  const req = https.get('https://wttr.in/?format=j1', { headers: { 'User-Agent': 'curl/7.0' } }, (res) => {
+    let body = '';
+    res.on('data', c => body += c);
+    res.on('end', () => {
+      try {
+        const d = JSON.parse(body);
+        const cur = d.current_condition[0];
+        const desc = cur.weatherDesc[0].value;
+        const tempC = parseInt(cur.temp_C);
+        saveAndApply(desc, tempC);
+      } catch {
+        // 天气解析失败:用纯日期情境,但仍缓存
+        saveAndApply('', null);
+      }
+    });
+  });
+  req.on('error', () => onNoNetwork(fallbackCache));
+  req.setTimeout(8000, () => { req.destroy(); onNoNetwork(fallbackCache); });
+}
+
+function onNoNetwork(fallbackCache) {
+  // 无网络:用旧缓存(若有),否则用纯日期兜底
+  if (fallbackCache && Array.isArray(fallbackCache.pool) && fallbackCache.pool.length) {
+    applyContext(fallbackCache.pool);
+  } else {
+    applyContext(buildContext('', null));
+  }
+}
+
+function saveAndApply(desc, tempC) {
+  const pool = buildContext(desc, tempC);
+  applyContext(pool);
+  try {
+    fs.writeFileSync(CONTEXT_CACHE, JSON.stringify({ week: getWeekKey(), pool }));
+  } catch {}
+}
 
 function createWindow() {
   const { width, height } = screen.getPrimaryDisplay().size;
   win = new BrowserWindow({
     width, height, x: 0, y: 0,
+    title: 'desktop-pet',
     frame: false, transparent: true, resizable: false,
     alwaysOnTop: true, skipTaskbar: true, hasShadow: false,
+    icon: path.join(__dirname, 'pokeball.png'),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     }
   });
-  // 默认穿透(但转发鼠标事件,让页面能检测进入鸭子)
   win.setIgnoreMouseEvents(true, { forward: true });
-
   win.loadFile(path.join(__dirname, 'duck_offline.html'));
 
   win.webContents.on('did-finish-load', () => {
-    // 注入一次(非轮询):透明背景+初始位置+鼠标穿透控制+暂停走路
     win.webContents.executeJavaScript(`
       document.documentElement.style.background='transparent';
       document.body.style.background='transparent';
@@ -30,14 +143,11 @@ function createWindow() {
         duck.style.left=(window.innerWidth-180)+'px';
         duck.style.top=(window.innerHeight-180)+'px';
       }
-      // 暂停鸭子自动走路(避免和拖拽/穿透冲突)
       window.__noAct=1;
       if(typeof window.decide==='function'){
         var _od=window.decide;
         window.decide=function(){ if(window.__noAct) return; return _od&&_od(); };
       }
-      // 鼠标穿透控制:setIgnoreMouseEvents(forward)下页面能收mousemove
-      // 鼠标在鸭子上 → 取消穿透(可拖); 否则穿透(点桌面)
       let curIgnore=true;
       document.addEventListener('mousemove',(e)=>{
         const el=document.elementFromPoint(e.clientX,e.clientY);
@@ -46,36 +156,136 @@ function createWindow() {
         else if(!onDuck && !curIgnore){ curIgnore=true; window.petAPI.setIgnoreMouse(true); }
       },true);
     `).catch(()=>{});
+    // 注入角色切换函数(含moveStyle差异化移动)
+    win.webContents.executeJavaScript(`
+      window.__moveStyle = 'walk';
+      window.__switchPet = function(name, displayName, imgB64, emoji, linesJson, moveStyle) {
+        window.__petName = displayName;
+        window.__petEmoji = emoji;
+        window.__moveStyle = moveStyle || 'walk';
+        try {
+          window.__petLines = JSON.parse(linesJson);
+          window.LINES = window.__petLines;
+        } catch(e){}
+        var img = document.getElementById('duckImg');
+        if (img) { img.src = imgB64; }
+        var hint = document.getElementById('hint');
+        if (hint) { hint.textContent = emoji + ' ' + displayName + ' 上桌啦!'; }
+        // 覆盖decide:根据moveStyle调整动作权重(不同角色移动方式不同)
+        if (typeof window.__origDecide === 'undefined' && typeof window.decide === 'function') {
+          window.__origDecide = window.decide;
+        }
+        window.decide = function(){
+          if (window.__noAct) return;
+          if (window.__petActLock) return;
+          var s = window.__moveStyle;
+          var idleSec = (Date.now() - (window.__lastInteract||Date.now())) / 1000;
+          // 各风格的动作倾向
+          var r = Math.random();
+          var doWalk = 0, doJump = 0, doSleep = 0, doAct = 0;
+          if (s === 'jumpy')      { doWalk=0.25; doJump=0.55; doAct=0.1; }   // 皮卡丘:爱跳
+          else if (s === 'hyper') { doWalk=0.65; doJump=0.2; doAct=0.1; }    // 伊布:爱跑
+          else if (s === 'lazy')  { doWalk=0.08; doJump=0.02; doSleep=0.55; doAct=0.1; } // 卡比兽/妙蛙:懒
+          else if (s === 'float') { doWalk=0.1;  doJump=0.05; doAct=0.35; }   // 瓦斯/胖丁:漂浮少走
+          else if (s === 'wobble'){ doWalk=0.15; doJump=0.1; doAct=0.45; }    // 可达鸭:晃动
+          else                    { doWalk=0.4;  doJump=0.15; doAct=0.2; }    // walk:正常散步
+          if (idleSec > 16 && doSleep > 0 && r < doSleep) {
+            window.__petActLock = true;
+            if (typeof window.startSleep === 'function') {
+              window.startSleep();
+              window.__lastInteract = Date.now();
+              setTimeout(function(){ window.__petActLock = false; }, 600);
+            }
+            return;
+          }
+          if (idleSec > 1.5) {
+            window.__petActLock = true;
+            var back = function(){ window.__petActLock = false; window.__lastInteract = Date.now(); if(typeof window.startIdle==='function') window.startIdle(); };
+            if (r < doWalk) {
+              var tx = 14 + Math.random() * (window.innerWidth - 180);
+              var ty = 14 + Math.random() * (window.innerHeight - 180);
+              if (typeof window.walkTo === 'function') window.walkTo(tx, ty, back);
+            } else if (r < doWalk + doJump) {
+              if (typeof window.doJump === 'function') window.doJump(back);
+            } else if (r < doWalk + doJump + doAct) {
+              // 随机说话:60%概率用情境台词(天气/节气/诗词),40%用角色台词
+              if (Math.random() < 0.6 && window.__contextLines && window.__contextLines.length) {
+                if (window.say) window.say(window.__contextLines[Math.floor(Math.random()*window.__contextLines.length)]);
+              } else if (window.LINES) {
+                var cats = ['happy','bored','curious','greet','excited','sing','hungry'];
+                var c = cats[Math.floor(Math.random()*cats.length)];
+                if (window.LINES[c] && window.say) window.say(window.LINES[c][Math.floor(Math.random()*window.LINES[c].length)]);
+              }
+              setTimeout(back, 1500);
+            } else {
+              setTimeout(back, 100);
+            }
+          }
+        };
+        // 触发一句招呼
+        if (window.__petLines && window.__petLines.greet && window.say) {
+          setTimeout(function(){
+            var g = window.__petLines.greet;
+            window.say(g[Math.floor(Math.random()*g.length)]);
+          }, 800);
+        }
+      };
+    `).catch(()=>{});
+    // 加载初始角色
+    setTimeout(() => switchPet(petsData.current || 'psyduck'), 300);
+    // 获取天气,注入情境台词池(异步,失败有兜底)
+    setTimeout(() => loadContext(), 1500);
   });
 
-  // IPC:页面请求切换穿透
   ipcMain.on('set-ignore-mouse', (event, ignore) => {
-    if (!win.isDestroyed()) {
-      win.setIgnoreMouseEvents(ignore, { forward: true });
-    }
-  });
-  ipcMain.on('get-initial-pos', (event) => {
-    event.returnValue = null;
+    if (!win.isDestroyed()) win.setIgnoreMouseEvents(ignore, { forward: true });
   });
 
   win.on('closed', () => { win = null; });
 }
 
-function createTray() {
-  const iconPath = path.join(__dirname, 'duck.ico');
-  let img;
-  try { img = nativeImage.createFromPath(iconPath); } catch {}
-  if (!img || img.isEmpty()) img = nativeImage.createEmpty();
-  tray = new Tray(img);
-  tray.setToolTip('可达鸭');
+function updateTray() {
+  if (!tray) return;
+  const petNames = Object.keys(petsData.pets);
+  const petMenu = petNames.map(name => {
+    const p = petsData.pets[name];
+    // 用角色自己的图作菜单图标(16x16)
+    let icon;
+    try {
+      icon = nativeImage.createFromPath(path.join(__dirname, p.img));
+      if (!icon.isEmpty()) icon = icon.resize({ width: 16, height: 16 });
+    } catch { icon = undefined; }
+    const item = {
+      label: p.name,
+      type: 'radio',
+      checked: name === petsData.current,
+      click: () => switchPet(name),
+    };
+    if (icon && !icon.isEmpty()) item.icon = icon;
+    return item;
+  });
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: '可达鸭桌面宠物', enabled: false },
+    { label: '角色切换', enabled: false },
+    ...petMenu,
     { type: 'separator' },
     { label: '退出', click: () => app.quit() }
   ]));
+  const cur = petsData.pets[petsData.current];
+  tray.setToolTip(cur ? `${cur.name} 桌面宠物` : '桌面宠物');
+}
+
+function createTray() {
+  const iconPath = path.join(__dirname, 'pokeball.png');
+  let img;
+  try { img = nativeImage.createFromPath(iconPath); } catch {}
+  if (!img || img.isEmpty()) img = nativeImage.createEmpty();
+  tray = new Tray(img.resize({ width: 16, height: 16 }));
+  updateTray();
 }
 
 app.whenReady().then(() => {
+  app.setName('desktop-pet');
+  loadPets();
   createWindow();
   createTray();
 });

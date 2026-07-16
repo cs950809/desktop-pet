@@ -1,0 +1,103 @@
+// 情境台词系统:根据天气/节气/节日/时段生成台词
+// 节气表(公历近似日期,月日)
+const SOLAR_TERMS = [
+  ['0106','小寒'],['0120','大寒'],['0204','立春'],['0219','雨水'],
+  ['0306','惊蛰'],['0321','春分'],['0405','清明'],['0420','谷雨'],
+  ['0521','立夏'],['0606','小满'],['0621','芒种'],['0707','小暑'],
+  ['0723','大暑'],['0808','立秋'],['0823','处暑'],['0908','白露'],
+  ['0923','秋分'],['1008','寒露'],['1024','霜降'],['1108','立冬'],
+  ['1122','小雪'],['1207','大雪'],['1222','冬至'],['0106','小寒']
+];
+// 节日表(月日)
+const FESTIVALS = {
+  '0101':['元旦快乐!','新年新气象!','新的一年开始了!'],
+  '0214':['情人节快乐!','今天有人陪吗?','送巧克力了吗?'],
+  '0308':['妇女节快乐!','致敬了不起的她!'],
+  '0501':['劳动节快乐!','今天不劳动!','劳动者最美!'],
+  '0504':['青年节快乐!','青春万岁!'],
+  '0601':['儿童节快乐!','永远年轻!','谁还不是个宝宝!'],
+  '1001':['国庆快乐!','祖国生日!','黄金周开始!'],
+  '1224':['平安夜快乐!','吃苹果了吗?'],
+  '1225':['圣诞快乐!','Merry Christmas!','Ho ho ho!'],
+  '1231':['跨年啦!','明年见!','倒计时!'],
+};
+// 时段问候(按小时)
+function timeGreeting(h){
+  if(h>=5&&h<9) return ['早上好!','早安,新的一天!','起床啦~','清晨的阳光真好'];
+  if(h>=9&&h<12) return ['上午好!','努力工作吧!','上午精神满满','加油!'];
+  if(h>=12&&h<14) return ['中午好!','该吃午饭啦','午休时间~','吃饱了犯困'];
+  if(h>=14&&h<18) return ['下午好!','喝杯咖啡吧','下午容易困','再坚持下'];
+  if(h>=18&&h<22) return ['晚上好!','今天辛苦了','该放松啦','晚上吃啥?'];
+  return ['夜深了…','该睡觉啦','熬夜伤身哦','梦里见~'];
+}
+// 天气台词(根据天气码/描述)
+const WEATHER_LINES = {
+  rain:   ['下雨啦,记得带伞!','雨天路滑小心~','下雨天适合睡觉','听雨声好治愈','滴滴答答下雨了'],
+  snow:   ['下雪啦!好美~','想堆雪人!','天冷加衣!','雪花飘飘~','白色世界!'],
+  sunny:  ['天气真好!','阳光明媚~','适合出门!','晒太阳好舒服','今天天气棒棒'],
+  cloudy: ['多云转晴吧~','天有点阴','适合发呆','云朵好多','不冷不热刚好'],
+  hot:    ['好热啊…','想吹空调','热化了…','多喝水!','夏天好难熬'],
+  cold:   ['好冷啊…','注意保暖!','冻成冰棍了','多穿点!','冷到发抖'],
+};
+// 彩蛋:诗词/歌词/搞笑(随机)
+const EGGS = {
+  poem: [
+    '床前明月光,疑是地上霜','举头望明月,低头思故乡',
+    '春眠不觉晓,处处闻啼鸟','锄禾日当午,汗滴禾下土',
+    '海上生明月,天涯共此时','落霞与孤鹜齐飞','采菊东篱下,悠然见南山',
+    '人生若只如初见','山有木兮木有枝','两情若是久长时',
+  ],
+  lyric: [
+    '后来终于在眼泪中明白','我送你离开千里之外',
+    '听妈妈的话别让她受伤','童话里都是骗人的',
+    '你笑起来真好看','稻香阵阵吹过','月亮代表我的心',
+    '隐形的翅膀带我飞翔','我和你一样,一样的坚强',
+  ],
+  funny: [
+    '今天也要元气满满鸭!','冲鸭!打工人!','躺平也是一种艺术',
+    '我太难了…','奥利给!','可达鸭头痛中…','累了就歇会儿',
+    '保持可爱!','人间值得!','摸鱼使我快乐',
+    '早睡早起,精神百倍…才怪','减肥从明天开始',
+  ],
+};
+// 判断天气类型(从天气码/描述)
+function parseWeather(desc, code){
+  desc = (desc||'').toLowerCase();
+  if(/rain|雨|shower/.test(desc)) return 'rain';
+  if(/snow|雪/.test(desc)) return 'snow';
+  if(/sun|clear|晴/.test(desc)) return 'sunny';
+  if(/cloud|overcast|阴|云/.test(desc)) return 'cloudy';
+  return 'sunny';
+}
+// 获取今天节气(前后2天内)
+function getTerm(mmdd){
+  for(const [d,name] of SOLAR_TERMS){
+    if(d===mmdd) return name;
+  }
+  return null;
+}
+// 主:生成情境台词池
+function buildContext(weatherDesc, tempC){
+  const now = new Date();
+  const mmdd = ('0'+(now.getMonth()+1)).slice(-2)+('0'+now.getDate()).slice(-2);
+  const pool = [];
+  // 时段问候
+  pool.push(...timeGreeting(now.getHours()));
+  // 节日
+  if(FESTIVALS[mmdd]) pool.push(...FESTIVALS[mmdd]);
+  // 节气
+  const term = getTerm(mmdd);
+  if(term) pool.push(`今日${term}`,`${term}到了~`,`${term}注意养生`);
+  // 天气
+  const wtype = parseWeather(weatherDesc);
+  if(WEATHER_LINES[wtype]) pool.push(...WEATHER_LINES[wtype]);
+  if(tempC){
+    if(tempC>=30 && WEATHER_LINES.hot) pool.push(...WEATHER_LINES.hot);
+    if(tempC<=5 && WEATHER_LINES.cold) pool.push(...WEATHER_LINES.cold);
+    pool.push(`今天${tempC}°C`);
+  }
+  // 彩蛋(诗词/歌词/搞笑)
+  pool.push(...EGGS.poem, ...EGGS.lyric, ...EGGS.funny);
+  return pool;
+}
+module.exports = { buildContext, parseWeather, timeGreeting };
