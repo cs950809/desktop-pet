@@ -18,6 +18,7 @@
       "context.js",
       "duck_offline.html",
       "pets.json",
+      "trending.json",
       "pokeball.png",
       "pokeball.ico",
       "assets/pets/**/*"

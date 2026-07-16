@@ -79,6 +79,61 @@ function loadContext() {
   fetchWeatherAndUpdate(cached);
 }
 
+// 网络热梗每月更新:从GitHub仓库的trending.json拉取,缓存30天,无网络用缓存或内置
+const TRENDING_CACHE = path.join(app.getPath('userData'), 'trending-cache.json');
+const TRENDING_URL = 'https://raw.githubusercontent.com/cs950809/desktop-pet/main/trending.json';
+
+function getMonthKey() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function applyTrending(lines) {
+  if (win && !win.isDestroyed()) {
+    win.webContents.executeJavaScript(
+      `window.__trendingLines = ${JSON.stringify(lines)};`
+    ).catch(() => {});
+  }
+}
+
+function loadTrending() {
+  // 1. 本月已缓存 → 直接用
+  let cached = null;
+  try {
+    cached = JSON.parse(fs.readFileSync(TRENDING_CACHE, 'utf-8'));
+  } catch {}
+  const thisMonth = getMonthKey();
+  if (cached && cached.month === thisMonth && Array.isArray(cached.lines) && cached.lines.length) {
+    applyTrending(cached.lines);
+    return;
+  }
+  // 2. 本月未更新 → 拉取GitHub上的最新热梗
+  const req = https.get(TRENDING_URL, { headers: { 'User-Agent': 'Mozilla/5.0' } }, (res) => {
+    let body = '';
+    res.on('data', c => body += c);
+    res.on('end', () => {
+      try {
+        const d = JSON.parse(body);
+        const lines = Array.isArray(d.lines) ? d.lines : [];
+        if (lines.length) {
+          applyTrending(lines);
+          try { fs.writeFileSync(TRENDING_CACHE, JSON.stringify({ month: thisMonth, lines })); } catch {}
+        } else { onTrendingFail(cached); }
+      } catch { onTrendingFail(cached); }
+    });
+  });
+  req.on('error', () => onTrendingFail(cached));
+  req.setTimeout(8000, () => { req.destroy(); onTrendingFail(cached); });
+}
+
+function onTrendingFail(cached) {
+  // 无网络/失败:用旧缓存(若有),否则不注入(页面用context.js内置热梗兜底)
+  if (cached && Array.isArray(cached.lines) && cached.lines.length) {
+    applyTrending(cached.lines);
+  }
+  // 没缓存也不报错,decide会用__contextLines(含内置热梗)
+}
+
 function fetchWeatherAndUpdate(fallbackCache) {
   const req = https.get('https://wttr.in/?format=j1', { headers: { 'User-Agent': 'curl/7.0' } }, (res) => {
     let body = '';
@@ -208,9 +263,14 @@ function createWindow() {
             } else if (r < doWalk + doJump) {
               if (typeof window.doJump === 'function') window.doJump(back);
             } else if (r < doWalk + doJump + doAct) {
-              // 随机说话:60%概率用情境台词(天气/节气/诗词),40%用角色台词
-              if (Math.random() < 0.6 && window.__contextLines && window.__contextLines.length) {
-                if (window.say) window.say(window.__contextLines[Math.floor(Math.random()*window.__contextLines.length)]);
+              // 随机说话:60%概率用情境台词(天气/节气/诗词/热梗),40%用角色台词
+              if (Math.random() < 0.6) {
+                // 合并情境台词 + 网络热梗(若有)
+                var pool = [];
+                if (window.__contextLines) pool = pool.concat(window.__contextLines);
+                if (window.__trendingLines) pool = pool.concat(window.__trendingLines);
+                if (pool.length && window.say) window.say(pool[Math.floor(Math.random()*pool.length)]);
+                else if (window.LINES) { var cats=['happy','bored','curious','greet','excited']; var c=cats[Math.floor(Math.random()*cats.length)]; if(window.LINES[c]&&window.say) window.say(window.LINES[c][Math.floor(Math.random()*window.LINES[c].length)]); }
               } else if (window.LINES) {
                 var cats = ['happy','bored','curious','greet','excited','sing','hungry'];
                 var c = cats[Math.floor(Math.random()*cats.length)];
@@ -235,6 +295,8 @@ function createWindow() {
     setTimeout(() => switchPet(petsData.current || 'psyduck'), 300);
     // 获取天气,注入情境台词池(异步,失败有兜底)
     setTimeout(() => loadContext(), 1500);
+    // 获取网络热梗(每月更新,无网络用缓存/内置兜底)
+    setTimeout(() => loadTrending(), 2000);
   });
 
   ipcMain.on('set-ignore-mouse', (event, ignore) => {
