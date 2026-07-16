@@ -53,7 +53,7 @@ jobs:
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
-          name: 可达鸭-Mac版
+          name: desktop-pet-Mac
           path: |
             dist/*.dmg
             dist/mac*/*.app
@@ -62,6 +62,6 @@ jobs:
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: 可达鸭-Windows版
+          name: desktop-pet-Windows
           path: |
             dist/*.exe

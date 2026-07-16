@@ -30,7 +30,7 @@
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["x64", "arm64"] }
+        { "target": "dmg", "arch": ["arm64"] }
       ],
       "icon": "pokeball.png",
       "category": "public.app-category.entertainment"

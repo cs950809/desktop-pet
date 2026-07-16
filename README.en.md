@@ -1,49 +1,36 @@
-# 🦆 Psyduck Desktop Pet
+# 🎮 desktop-pet
 
 English | [简体中文](./README.md)
 
-A Psyduck that wanders around your desktop. Transparent window, click-through, draggable, tray exit — the full desktop pet experience.
+A Pokémon pet that lives on your desktop. 10 classic characters to switch between, autonomous behavior, context-aware dialogue, click-through, draggable.
 
-![Psyduck](./duck.png)
+![Pet](./pokeball.png)
 
 ## ✨ Features
 
-- 🖼️ **Transparent Background** — The duck floats on your desktop without blocking the wallpaper
-- 🖱️ **Click-Through** — Clicks outside the duck pass straight through to the desktop
-- ✋ **Free Drag** — Hold left-click to drag the duck anywhere
-- 🤸 **Autonomous Behavior** — The duck walks, jumps, thinks, idles, and sleeps on its own
-- 💬 **Speech Bubbles** — Randomly says things like "Quack!" or "Hmm..."
-- 📌 **Edge Snap** — Drag to a screen edge and it snaps, showing only its head
-- 🗑️ **Tray Exit** — No taskbar entry; right-click the tray icon to quit
+- 🎭 **10 Characters** — Psyduck, Pikachu, Eevee, Jigglypuff, Snorlax, Charmander, Bulbasaur, Squirtle, Weezing, Mewtwo
+- 🏃 **Unique Movement** — Each moves differently: Pikachu bounces, Snorlax is super lazy, Eevee darts around, Mewtwo floats…
+- 💬 **Context Dialogue** — Senses weather / solar terms / festivals / time of day; also recites poetry, lyrics, and internet memes
+- 🖱️ **Click-Through** — Clicks outside the pet pass through to the desktop
+- ✋ **Free Drag** — Hold left-click to drag anywhere
+- 🗂️ **Tray Switch** — Pokéball icon, right-click to pick a character (each with its own avatar)
+- 🔄 **Weekly Refresh** — Context lines update weekly; works offline with cached phrases
 
-## 📦 Download & Install
+## 📦 Download
 
-### Windows
-1. Go to [Releases](../../releases) and download the latest `Psyduck Setup x.x.x.exe`
-2. Double-click to install
-3. Launch "Psyduck" from the Start Menu
-
-### macOS
-1. Go to [Releases](../../releases) and download `Psyduck-x.x.x.dmg`
-2. Open the dmg and drag "Psyduck" into "Applications"
-3. **First launch**: Right-click the app → "Open" → Confirm (required for unsigned apps)
+Go to [Actions](../../actions) → pick the latest successful build → download from Artifacts:
+- `desktop-pet-Windows` → Windows exe
+- `desktop-pet-Mac` → macOS dmg (Apple Silicon)
 
 ## 🎮 Usage
 
 | Action | Effect |
 |--------|--------|
-| Hold left-click & drag | Move the duck |
-| Move mouse away | Duck acts on its own (walk/jump/sleep) |
-| Drag to screen edge | Snaps, shows only the head |
-| Hover near a snapped duck | Slides back out |
-| Right-click tray icon → Quit | Close the app |
+| Hold left-click & drag | Move the pet |
+| Right-click tray Pokéball | Switch character / Quit |
 
-## 🔧 Build from Source
+## 🔧 Run Locally
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) 18+
-
-### Run Locally
 ```bash
 git clone https://github.com/cs950809/desktop-pet.git
 cd desktop-pet
@@ -51,23 +38,16 @@ npm install
 npm start
 ```
 
-### Package
+### Build
 ```bash
-# Windows
-npx electron-builder --win
-
-# macOS (must run on a Mac)
-npx electron-builder --mac
+npx electron-builder --win     # Windows
+npx electron-builder --mac     # macOS (must run on a Mac)
 ```
 
-Output goes to the `dist/` directory.
+## 🛠️ Tech
 
-## 🛠️ Tech Stack
-
-- **[Electron](https://www.electronjs.org/)** — Cross-platform desktop framework
-- **Transparent window + `setIgnoreMouseEvents(forward)`** — Core click-through mechanism
-- **HTML/CSS/JS** — The duck itself and its animations
+Electron + transparent window `setIgnoreMouseEvents(forward)` for click-through; wttr.in for weather; local cache for context lines.
 
 ## 📄 License
 
-This project is for learning and communication purposes only. Psyduck is a character owned by The Pokémon Company; all related image copyrights belong to the original rights holders.
+For learning purposes only. Pokémon characters © The Pokémon Company.
