@@ -1,0 +1,67 @@
+name: 构建桌面宠物
+
+# 触发条件:手动点击 / push tag / 或在 Actions 页 Run workflow
+on:
+  workflow_dispatch:   # 手动触发
+  push:
+    tags:
+      - 'v*'           # 打 tag(v1.0.0)时自动触发
+
+jobs:
+  build:
+    name: 构建 ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest      # Mac (同时出 Intel + Apple Silicon)
+            artifact: mac-dmg
+          - os: windows-latest    # Windows (可选,你本地已有可不跑)
+            artifact: win-exe
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 安装依赖
+        run: npm install
+
+      - name: 安装 electron-builder
+        run: npm install electron-builder@latest --save-dev
+
+      - name: 打包 (Mac)
+        if: runner.os == 'macOS'
+        run: npx electron-builder --mac
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Mac 不签名(GitHub Actions 没有开发者证书,不签名也能用,首次打开需右键打开)
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: 打包 (Windows)
+        if: runner.os == 'Windows'
+        run: npx electron-builder --win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传 Mac 产物
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 可达鸭-Mac版
+          path: |
+            dist/*.dmg
+            dist/mac*/*.app
+
+      - name: 上传 Windows 产物
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 可达鸭-Windows版
+          path: |
+            dist/*.exe

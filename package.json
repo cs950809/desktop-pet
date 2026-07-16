@@ -1,0 +1,45 @@
+{
+  "name": "psyduck-pet",
+  "version": "1.0.0",
+  "description": "可达鸭桌面宠物",
+  "main": "main.js",
+  "author": "duck",
+  "scripts": {
+    "start": "electron .",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.duck.pet",
+    "productName": "可达鸭",
+    "files": [
+      "main.js",
+      "preload.js",
+      "duck_offline.html",
+      "duck.ico"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "duck.ico"
+    },
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "icon": "duck.ico",
+      "category": "public.app-category.entertainment"
+    },
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": false
+    }
+  },
+  "devDependencies": {
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3"
+  }
+}
