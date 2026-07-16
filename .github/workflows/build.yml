@@ -7,6 +7,10 @@ on:
     tags:
       - 'v*'
 
+# 关键:授予GITHUB_TOKEN创建Release的权限
+permissions:
+  contents: write
+
 jobs:
   build:
     name: 构建 ${{ matrix.os }}
