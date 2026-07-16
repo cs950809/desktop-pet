@@ -4,7 +4,7 @@ English | [简体中文](./README.md)
 
 A Pokémon pet that lives on your desktop. 10 classic characters to switch between, autonomous behavior, context-aware dialogue, click-through, draggable.
 
-![Pet](./pokeball.png)
+⭐ **If you like this project, please give it a Star!** ⭐
 
 ## ✨ Features
 
@@ -14,19 +14,24 @@ A Pokémon pet that lives on your desktop. 10 classic characters to switch betwe
 - 🖱️ **Click-Through** — Clicks outside the pet pass through to the desktop
 - ✋ **Free Drag** — Hold left-click to drag anywhere
 - 🗂️ **Tray Switch** — Pokéball icon, right-click to pick a character (each with its own avatar)
-- 🔄 **Weekly Refresh** — Context lines update weekly; works offline with cached phrases
+- 🔄 **Periodic Updates** — Context lines refresh weekly, trending memes refresh monthly; works offline with cached phrases
 
 ## 📦 Download
 
-Go to [Actions](../../actions) → pick the latest successful build → download from Artifacts:
-- `desktop-pet-Windows` → Windows exe
-- `desktop-pet-Mac` → macOS dmg (Apple Silicon)
+Go to the [Releases page](../../releases) for the latest version:
+- **Windows** → `desktop-pet-Setup-x.x.x.exe`
+- **macOS** → `desktop-pet-x.x.x-arm64.dmg` (Apple Silicon)
+
+> You can also download from the [Actions](../../actions) Artifacts if no release exists yet.
+
+### First Launch on macOS
+The app is unsigned and may be blocked. **Right-click the app → "Open" → Confirm**.
 
 ## 🎮 Usage
 
 | Action | Effect |
 |--------|--------|
-| Hold left-click & drag | Move the pet |
+| Hold left-click and drag | Move the pet |
 | Right-click tray Pokéball | Switch character / Quit |
 
 ## 🔧 Run Locally
@@ -44,10 +49,20 @@ npx electron-builder --win     # Windows
 npx electron-builder --mac     # macOS (must run on a Mac)
 ```
 
-## 🛠️ Tech
+## 🤝 Contributing
 
-Electron + transparent window `setIgnoreMouseEvents(forward)` for click-through; wttr.in for weather; local cache for context lines.
+Forks and contributions are welcome! If this project helps you:
+- Keep the original author attribution
+- Link back to this repository in your README
+- Issues and Pull Requests are welcome
 
 ## 📄 License
 
-For learning purposes only. Pokémon characters © The Pokémon Company.
+- **Code**: [MIT License](./LICENSE) — free to use, modify, and distribute
+- **Character images**: Pokémon © The Pokémon Company / Nintendo / Game Freak. This project is for personal learning and entertainment only — **no commercial use**
+
+## 🙏 Acknowledgements
+
+- Character sprites from [PokeAPI](https://github.com/PokeAPI/sprites)
+- Weather data from [wttr.in](https://wttr.in)
+- Built with [Electron](https://www.electronjs.org/)
