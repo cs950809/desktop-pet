@@ -16,7 +16,8 @@
       "main.js",
       "preload.js",
       "duck_offline.html",
-      "duck.ico"
+      "duck.ico",
+      "duck.png"
     ],
     "win": {
       "target": [
@@ -28,7 +29,7 @@
       "target": [
         { "target": "dmg", "arch": ["x64", "arm64"] }
       ],
-      "icon": "duck.ico",
+      "icon": "duck.png",
       "category": "public.app-category.entertainment"
     },
     "nsis": {
