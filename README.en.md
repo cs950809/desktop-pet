@@ -24,8 +24,16 @@ Go to the [Releases page](../../releases) for the latest version:
 
 > You can also download from the [Actions](../../actions) Artifacts if no release exists yet.
 
-### First Launch on macOS
-The app is unsigned and may be blocked. **Right-click the app → "Open" → Confirm**.
+### First Launch on macOS (Important)
+The app is unsigned and may show "damaged" or be blocked. This is macOS quarantine for unsigned apps — **not actually damaged**. Fix:
+
+**Option 1 (recommended)**: Open "Terminal" and run (drag the app into Terminal to auto-fill the path):
+```bash
+xattr -cr /Applications/desktop-pet.app
+```
+Then double-click to open normally.
+
+**Option 2**: Right-click the app → "Open" → Confirm.
 
 ## 🎮 Usage
 
