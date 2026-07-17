@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, Tray, Menu, nativeImage, ipcMain } = require('electron');
+const { app, BrowserWindow, screen, Tray, Menu, nativeImage, ipcMain, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
@@ -351,6 +351,29 @@ function createTray() {
   if (!img || img.isEmpty()) img = nativeImage.createEmpty();
   tray = new Tray(img);
   updateTray();
+  // macOS: setContextMenu 有时菜单项渲染不全,用 click 手动弹出更可靠
+  if (process.platform === 'darwin') {
+    tray.on('click', () => { updateTray(); tray.popUpContextMenu(Menu.buildFromTemplate(buildMenuTemplate())); });
+    tray.on('right-click', () => { updateTray(); tray.popUpContextMenu(Menu.buildFromTemplate(buildMenuTemplate())); });
+  }
+}
+
+// 构建菜单模板(供手动弹出用)
+function buildMenuTemplate() {
+  const petNames = Object.keys(petsData.pets);
+  const petMenu = petNames.map(name => {
+    const p = petsData.pets[name];
+    return {
+      label: (name === petsData.current ? '✓ ' : '   ') + p.emoji + ' ' + p.name,
+      click: () => switchPet(name),
+    };
+  });
+  return [
+    { label: '角色切换', enabled: false },
+    ...petMenu,
+    { type: 'separator' },
+    { label: '退出', click: () => app.quit() }
+  ];
 }
 
 app.whenReady().then(() => {
@@ -358,5 +381,15 @@ app.whenReady().then(() => {
   loadPets();
   createWindow();
   createTray();
+  // 全局快捷键切换角色:Cmd/Ctrl + 1~9,0 (不依赖菜单,mac兼容性好)
+  const mod = process.platform === 'darwin' ? 'Command' : 'Ctrl';
+  const names = Object.keys(petsData.pets);
+  const keys = ['1','2','3','4','5','6','7','8','9','0'];
+  names.forEach((name, i) => {
+    if (i < keys.length) {
+      globalShortcut.register(`${mod}+${keys[i]}`, () => switchPet(name));
+    }
+  });
 });
+app.on('will-quit', () => globalShortcut.unregisterAll());
 app.on('window-all-closed', () => app.quit());
