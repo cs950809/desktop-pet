@@ -311,18 +311,18 @@ function updateTray() {
   const petNames = Object.keys(petsData.pets);
   const petMenu = petNames.map(name => {
     const p = petsData.pets[name];
-    // 用角色自己的图作菜单图标(16x16)
-    let icon;
-    try {
-      icon = nativeImage.createFromPath(path.join(__dirname, p.img));
-      if (!icon.isEmpty()) icon = icon.resize({ width: 16, height: 16 });
-    } catch { icon = undefined; }
     const item = {
-      label: (name === petsData.current ? '✓ ' : '   ') + p.name,
+      label: (name === petsData.current ? '✓ ' : '') + p.emoji + ' ' + p.name,
       type: 'normal',
       click: () => switchPet(name),
     };
-    if (icon && !icon.isEmpty()) item.icon = icon;
+    // Windows: 加角色小图标(macOS菜单加图标会渲染失败,用emoji代替)
+    if (process.platform !== 'darwin') {
+      try {
+        const icon = nativeImage.createFromPath(path.join(__dirname, p.img));
+        if (!icon.isEmpty()) { item.icon = icon.resize({ width: 16, height: 16 }); }
+      } catch {}
+    }
     return item;
   });
   tray.setContextMenu(Menu.buildFromTemplate([
