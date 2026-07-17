@@ -318,9 +318,8 @@ function updateTray() {
       if (!icon.isEmpty()) icon = icon.resize({ width: 16, height: 16 });
     } catch { icon = undefined; }
     const item = {
-      label: p.name,
-      type: 'radio',
-      checked: name === petsData.current,
+      label: (name === petsData.current ? '✓ ' : '   ') + p.name,
+      type: 'normal',
       click: () => switchPet(name),
     };
     if (icon && !icon.isEmpty()) item.icon = icon;
@@ -337,11 +336,20 @@ function updateTray() {
 }
 
 function createTray() {
-  const iconPath = path.join(__dirname, 'pokeball.png');
   let img;
-  try { img = nativeImage.createFromPath(iconPath); } catch {}
+  if (process.platform === 'darwin') {
+    // macOS:菜单栏必须用模板图(单色黑+透明),否则图标不显示
+    try {
+      img = nativeImage.createFromPath(path.join(__dirname, 'pokeballTemplate.png'));
+      img.setTemplateImage(true);
+    } catch {}
+  } else {
+    // Windows:彩色精灵球
+    try { img = nativeImage.createFromPath(path.join(__dirname, 'pokeball.png')); } catch {}
+    if (img && !img.isEmpty()) img = img.resize({ width: 16, height: 16 });
+  }
   if (!img || img.isEmpty()) img = nativeImage.createEmpty();
-  tray = new Tray(img.resize({ width: 16, height: 16 }));
+  tray = new Tray(img);
   updateTray();
 }
 

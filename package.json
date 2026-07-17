@@ -1,6 +1,6 @@
 {
   "name": "desktop-pet",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "宝可梦桌面宠物 - 多角色切换",
   "main": "main.js",
   "author": "desktop-pet",
@@ -20,18 +20,29 @@
       "pets.json",
       "trending.json",
       "pokeball.png",
+      "pokeballTemplate.png",
       "pokeball.ico",
       "assets/pets/**/*"
     ],
     "win": {
       "target": [
-        { "target": "nsis", "arch": ["x64"] }
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
       "icon": "pokeball.ico"
     },
     "mac": {
       "target": [
-        { "target": "dmg", "arch": ["arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
       ],
       "icon": "pokeball.png",
       "category": "public.app-category.entertainment"
