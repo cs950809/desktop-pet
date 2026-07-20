@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>desktop-pet · 宝可梦桌面宠物</title>
+<meta name="description" content="会出现在你桌面的宝可梦宠物。10个经典角色、个性移动、情境台词、点击穿透、可拖拽。免费开源。">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--y:#FFCB1F;--y2:#FFE066;--o:#F08500;--dark:#2D2A32;--gray:#6b6b6b;--bg:#FFFDF5}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--dark);overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1100px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:50;background:rgba(255,253,245,.9);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,0,0,.06)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px}
+.logo img{width:32px;height:32px}
+.nav-links{display:flex;gap:28px;font-size:14px;color:var(--gray)}
+.nav-links a:hover{color:var(--dark)}
+.btn-dl{background:var(--dark);color:#fff!important;padding:9px 20px;border-radius:999px;font-weight:600;font-size:14px}
+.btn-dl:hover{background:#000}
+.hero{text-align:center;padding:90px 24px 70px;position:relative}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0,rgba(255,203,31,.18),transparent 60%);pointer-events:none}
+.hero-mascot{width:160px;height:160px;margin:0 auto 28px;animation:float 3s ease-in-out infinite;position:relative}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.hero h1{font-size:clamp(34px,6vw,58px);font-weight:900;letter-spacing:-1px;margin-bottom:18px;line-height:1.1}
+.hero h1 span{background:linear-gradient(135deg,var(--y2),var(--o));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{font-size:clamp(15px,2.5vw,19px);color:var(--gray);max-width:600px;margin:0 auto 36px;line-height:1.7}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn{padding:14px 32px;border-radius:999px;font-weight:700;font-size:15px;cursor:pointer;border:none;transition:transform .15s,box-shadow .15s;display:inline-block}
+.btn-primary{background:linear-gradient(135deg,var(--y2),var(--y));color:var(--dark);box-shadow:0 8px 24px -8px rgba(240,133,0,.5)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 28px -8px rgba(240,133,0,.6)}
+.btn-ghost{background:#fff;color:var(--dark);border:1.5px solid rgba(0,0,0,.1)}
+.btn-ghost:hover{transform:translateY(-2px);border-color:var(--dark)}
+.badges{display:flex;gap:18px;justify-content:center;margin-top:32px;flex-wrap:wrap}
+.badge{font-size:13px;color:var(--gray);display:flex;align-items:center;gap:6px}
+.badge b{color:var(--dark)}
+.features{padding:80px 0}
+.section-title{text-align:center;font-size:clamp(26px,4vw,38px);font-weight:900;margin-bottom:12px}
+.section-sub{text-align:center;color:var(--gray);margin-bottom:56px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px}
+.card{background:#fff;border-radius:18px;padding:30px 26px;border:1px solid rgba(0,0,0,.06);transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-4px);box-shadow:0 16px 40px -16px rgba(0,0,0,.15)}
+.card .ic{font-size:36px;margin-bottom:14px}
+.card h3{font-size:18px;margin-bottom:8px;font-weight:800}
+.card p{font-size:14px;color:var(--gray);line-height:1.6}
+.gallery{padding:80px 0;background:linear-gradient(180deg,transparent,rgba(255,203,31,.06),transparent)}
+.pets{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:18px;max-width:900px;margin:0 auto}
+.pet-card{text-align:center;background:#fff;border-radius:16px;padding:24px 12px;border:1px solid rgba(0,0,0,.06);transition:transform .2s}
+.pet-card:hover{transform:translateY(-6px) scale(1.03)}
+.pet-card img{width:80px;height:80px;object-fit:contain;margin-bottom:10px}
+.pet-card .pn{font-weight:700;font-size:14px}
+.pet-card .pe{font-size:12px;color:var(--gray);margin-top:4px}
+.download{padding:80px 0;text-align:center}
+.dl-cards{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;margin-top:40px}
+.dl-card{background:#fff;border:1.5px solid rgba(0,0,0,.08);border-radius:18px;padding:32px 40px;min-width:240px;transition:transform .2s,border-color .2s}
+.dl-card:hover{transform:translateY(-4px);border-color:var(--y)}
+.dl-card .ic{font-size:44px;margin-bottom:12px}
+.dl-card h3{font-size:20px;font-weight:800;margin-bottom:6px}
+.dl-card p{font-size:13px;color:var(--gray);margin-bottom:18px}
+.dl-card a{display:inline-block;background:var(--dark);color:#fff;padding:11px 28px;border-radius:999px;font-weight:600;font-size:14px}
+.dl-card a:hover{background:#000}
+.faq{padding:80px 0;max-width:760px;margin:0 auto}
+.faq-item{background:#fff;border:1px solid rgba(0,0,0,.06);border-radius:14px;margin-bottom:14px;overflow:hidden}
+.faq-q{padding:20px 24px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:15px}
+.faq-q:after{content:'+';font-size:20px;color:var(--gray);transition:transform .2s}
+.faq-item.open .faq-q:after{transform:rotate(45deg)}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s;padding:0 24px;color:var(--gray);font-size:14px;line-height:1.7}
+.faq-item.open .faq-a{max-height:220px;padding:0 24px 20px}
+.faq-a code{background:#f4f4f4;padding:2px 8px;border-radius:5px;font-size:13px;color:var(--dark)}
+footer{background:var(--dark);color:#bbb;padding:50px 24px 40px;text-align:center;font-size:14px}
+footer a{color:var(--y2)}
+footer .links{display:flex;gap:24px;justify-content:center;margin-bottom:20px;flex-wrap:wrap}
+.disclaimer{margin-top:18px;font-size:12px;color:#666;max-width:600px;margin:18px auto 0;line-height:1.6}
+@media(max-width:600px){.nav-links{display:none}.hero{padding:60px 24px 50px}}
+</style>
+</head>
+<body>
+<nav>
+  <div class="wrap">
+    <a class="logo" href="#"><img src="assets/pokeball.png" alt="">desktop-pet</a>
+    <div class="nav-links">
+      <a href="#features">功能</a>
+      <a href="#pets">角色</a>
+      <a href="#download">下载</a>
+      <a href="#faq">常见问题</a>
+    </div>
+    <a class="btn-dl" href="#download">立即下载</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <img class="hero-mascot" src="assets/pikachu.png" alt="皮卡丘">
+  <h1>你的桌面上<br>住进了一只 <span>宝可梦</span></h1>
+  <p>免费的桌面宠物。10 个经典角色陪你工作、发呆、摸鱼。会自己溜达、会说话、会睡觉,拖到哪里就在哪里待着。</p>
+  <div class="hero-btns">
+    <a class="btn btn-primary" href="#download">免费下载</a>
+    <a class="btn btn-ghost" href="https://github.com/cs950809/desktop-pet" target="_blank">查看源码</a>
+  </div>
+  <div class="badges">
+    <span class="badge">✨ <b>10 个角色</b></span>
+    <span class="badge">💻 <b>Windows + macOS</b></span>
+    <span class="badge">💬 <b>情境台词</b></span>
+    <span class="badge">🔓 <b>开源免费</b></span>
+  </div>
+</section>
+
+<section class="features" id="features">
+  <div class="wrap">
+    <h2 class="section-title">为什么你会喜欢它</h2>
+    <p class="section-sub">不是普通的贴图,是一只会"活着"的桌面伙伴</p>
+    <div class="grid">
+      <div class="card"><div class="ic">🖼️</div><h3>透明不遮挡</h3><p>宠物浮在桌面上,背景完全透明,绝不挡住你的壁纸和工作窗口。</p></div>
+      <div class="card"><div class="ic">🖱️</div><h3>点击穿透</h3><p>宠物以外的地方,鼠标点击直接穿过到桌面。它只占用自己那一小块。</p></div>
+      <div class="card"><div class="ic">✋</div><h3>自由拖拽</h3><p>按住左键,把宠物拖到屏幕任意位置。它会在新位置继续生活。</p></div>
+      <div class="card"><div class="ic">🤸</div><h3>个性移动</h3><p>每个角色移动方式不同:皮卡丘爱蹦跳,卡比兽超懒,伊布到处乱窜。</p></div>
+      <div class="card"><div class="ic">💬</div><h3>情境台词</h3><p>感知天气、节气、节日、时段,还会说诗词、歌词、网络热梗。</p></div>
+      <div class="card"><div class="ic">🎭</div><h3>一键切换</h3><p>托盘菜单选角色,或用快捷键(Ctrl/Cmd+数字)秒切 10 个角色。</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="gallery" id="pets">
+  <h2 class="section-title">10 位经典角色</h2>
+  <p class="section-sub">总有一只你喜欢的</p>
+  <div class="pets" id="petGrid"></div>
+</section>
+
+<section class="download" id="download">
+  <div class="wrap">
+    <h2 class="section-title">免费下载</h2>
+    <p class="section-sub">开源免费,支持 Windows 和 macOS</p>
+    <div class="dl-cards">
+      <div class="dl-card">
+        <div class="ic">🪟</div>
+        <h3>Windows</h3>
+        <p>Windows 10 及以上 · 64 位</p>
+        <a href="https://github.com/cs950809/desktop-pet/releases/latest" target="_blank">下载 exe 安装包</a>
+      </div>
+      <div class="dl-card">
+        <div class="ic">🍎</div>
+        <h3>macOS</h3>
+        <p>Apple Silicon (M1/M2/M3)</p>
+        <a href="https://github.com/cs950809/desktop-pet/releases/latest" target="_blank">下载 dmg 镜像</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq" id="faq">
+  <h2 class="section-title">常见问题</h2>
+  <div class="faq-item"><div class="faq-q">macOS 打开提示"已损坏"怎么办?</div><div class="faq-a">这是 macOS 对未签名应用的隔离机制,不是真损坏。打开「终端」运行:<code>xattr -cr /Applications/desktop-pet.app</code>(把 app 拖进终端自动补路径),然后就能正常打开了。</div></div>
+  <div class="faq-item"><div class="faq-q">如何切换角色?</div><div class="faq-a">点击屏幕右上角(Windows 为右下角)托盘里的精灵球图标,菜单中选择角色。也可以用快捷键:Windows 按 Ctrl+数字,macOS 按 Cmd+数字(1=可达鸭,2=皮卡丘...0=超梦)。</div></div>
+  <div class="faq-item"><div class="faq-q">宠物会消耗很多资源吗?</div><div class="faq-a">正常使用 1-2 只完全流畅。因为每个宠物是独立进程,不建议同时开很多只(5个以上可能占用较多内存)。</div></div>
+  <div class="faq-item"><div class="faq-q">没有网络能用吗?</div><div class="faq-a">可以。天气和网络热梗需要联网获取,但无网络时会自动用本地缓存的台词库继续说话,基本功能不受影响。</div></div>
+  <div class="faq-item"><div class="faq-q">怎么退出?</div><div class="faq-a">右键托盘的精灵球图标,选择「退出」即可。宠物不会出现在任务栏,只通过托盘管理。</div></div>
+  <div class="faq-item"><div class="faq-q">可以二次开发吗?</div><div class="faq-a">当然!项目基于 MIT 协议开源,欢迎 Fork。如果对你有帮助,欢迎在 GitHub 点个 Star,或在你的项目中注明出处。</div></div>
+</section>
+
+<footer>
+  <div class="links">
+    <a href="https://github.com/cs950809/desktop-pet" target="_blank">GitHub</a>
+    <a href="https://github.com/cs950809/desktop-pet/releases" target="_blank">下载</a>
+    <a href="https://github.com/cs950809/desktop-pet/issues" target="_blank">问题反馈</a>
+  </div>
+  <div>© 2026 desktop-pet · 用 ❤️ 制作</div>
+  <div class="disclaimer">本项目仅供学习交流。Pokémon 角色形象版权归 The Pokémon Company / Nintendo / Game Freak 所有,不得用于商业用途。</div>
+</footer>
+
+<script>
+const PETS=[
+  ['psyduck','可达鸭','🦆'],['pikachu','皮卡丘','⚡'],['bulbasaur','妙蛙种子','🌱'],
+  ['squirtle','杰尼龟','🐢'],['weezing','双弹瓦斯','💨'],['eevee','伊布','🦊'],
+  ['jigglypuff','胖丁','🎤'],['snorlax','卡比兽','😴'],['charmander','小火龙','🔥'],['mewtwo','超梦','🔮']
+];
+document.getElementById('petGrid').innerHTML=PETS.map(function(p){
+  return '<div class="pet-card"><img src="assets/'+p[0]+'.png" alt="'+p[1]+'"><div class="pn">'+p[1]+'</div><div class="pe">'+p[2]+'</div></div>';
+}).join('');
+document.querySelectorAll('.faq-q').forEach(function(q){
+  q.onclick=function(){q.parentElement.classList.toggle('open');};
+});
+</script>
+</body>
+</html>
